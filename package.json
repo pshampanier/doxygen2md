@@ -1,0 +1,21 @@
+{
+  "name": "doxygen2md",
+  "version": "1.0.0",
+  "description": "A converter of doxygen XML output to Markdown",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "doxygen",
+    "markdown"
+  ],
+  "author": "Philippe FERDINAND",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^2.9.0",
+    "handlebars": "^4.0.5",
+    "winston": "^2.2.0",
+    "xml2js": "^0.4.16"
+  }
+}
