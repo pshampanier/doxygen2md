@@ -21,6 +21,10 @@
  **/
 'use strict';
 
+/**
+  Debugging: devtool index.js --watch --break -- ../libpqmxx/dist/help/xml/
+**/
+
 var fs = require('fs');
 var handlebars = require('handlebars');
 var log = require('winston');
@@ -69,7 +73,6 @@ var options = {
 
 program.version(pjson.version)
   .usage('[options] <doxygen xml directory>')
-  .option('-o, --output <directory>', 'output directory for generated files')
   .option('-v, --verbose', 'verbose mode', false)
   .parse(process.argv);
 
