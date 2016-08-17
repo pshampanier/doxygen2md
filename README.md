@@ -2,7 +2,8 @@
 
 > A doxygen to markdown converter.
 
-Very limited for now. Tested on a C++ project. You can see the result [here](https://pshampanier.gitbooks.io/libpqmxx/content/) in the API section.
+An example of the result can be seen [here](https://pshampanier.gitbooks.io/libpqmxx/content/) 
+in the API section.
 
 ## Usage
 
@@ -19,4 +20,4 @@ Very limited for now. Tested on a C++ project. You can see the result [here](htt
   -v, --verbose  verbose mode
   ```
 
-The all documentation in the Markdown format is generated on stdout.
+The all documentation converted to Markdown is generated on stdout.

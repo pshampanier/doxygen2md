@@ -29,111 +29,104 @@ var fs = require('fs');
 var handlebars = require('handlebars');
 var log = require('winston');
 var path = require('path');
-var pjson = require('./package.json');
-var program = require('commander');
 var xml2js = require('xml2js');
 
 var Compound = require('./src/compound');
 var doxyparser = require('./src/parser');
 
-/** 
- * Default values for the options.
- **/
-var options = {
-  'compound': {
-    'members': {
-      /**
-      
-        'public-attrib',
-        'public-func',
-        'protected-attrib',
-        'protected-func',
-        'private-attrib',
-        'private-func'
-        
-       **/      
-      'filter': [
-        'public-attrib',
-        'public-func',
-        'protected-attrib',
-        'protected-func'
-      ]
-    },
-    'compounds': {
-      'filter': [
-        'namespace',
-        'class',
-        'struct',
-        'union',
-        'typedef'
-      ]
+module.exports = {
+
+  /**
+   * Default values for the options.
+   **/
+  defaultOptions: {
+
+    lang: 'cpp',                /** Programming language **/
+    directory: null,            /** location of the doxygen files **/
+    anchors: true,              /** generate anchors for internal links **/
+
+    'compound': {
+      'members': {
+        'filter': [
+          'public-attrib',
+          'public-func',
+          'protected-attrib',
+          'protected-func'
+        ]
+      },
+      'compounds': {
+        'filter': [
+          'namespace',
+          'class',
+          'struct',
+          'union',
+          'typedef'
+        ]
+      }
     }
-  }
-}
+  },
 
-program.version(pjson.version)
-  .usage('[options] <doxygen xml directory>')
-  .option('-v, --verbose', 'verbose mode', false)
-  .parse(process.argv);
+  render: function (options) {
 
-if (program.verbose) {
-  log.level = 'verbose';
-}
+    //
+    // handlebar initialization
+    //
 
-if (program.args.length == 0) {
-  program.help();
-}
-
-var directory = program.args[0];
-var lang = 'cpp';
-var templatesDirectory = path.join(__dirname, 'templates', lang);
-var templates = {};
-
-//
-// handlebar initialization
-
-// Escape the code for a table cell.
-handlebars.registerHelper('cell', function(code) {
-  return code.replace(/\|/g, '\\|').replace(/\n/g, '<br/>');
-});
-
-// Escape the code for a titles.
-handlebars.registerHelper('title', function(code) {
-  return code.replace(/\n/g, '<br/>');
-});
-
-// Generate an anchor for internal links
-handlebars.registerHelper('anchor', function(name) {
-  return '{#' + name + '}';
-});
-
-// Load the templates
-fs.readdirSync(templatesDirectory).forEach(function (filename) {
-  var fullname = path.join(templatesDirectory, filename);
-  var template = handlebars.compile(fs.readFileSync(fullname, 'utf8'), {
-    noEscape: true,
-    strict: true
-  });
-  templates[filename.match(/(.*)\.md$/)[1]] = template;
-});
-
-//
-// parsing files
-//
-log.verbose('Parsing ' + path.join(directory, 'index.xml'));
-fs.readFile(path.join(directory, 'index.xml'), 'utf8', function(err, data) {
-  var parser = new xml2js.Parser();
-  parser.parseString(data, function (err, result) {
-    var root = new Compound();
-    doxyparser.parseIndex(directory, root, result.doxygenindex.compound, options);
-    var compounds = root.getAll('compounds', true);
-    var contents = compounds.map(function (compound) {
-      return compound.toMarkdown(templates);
+    // Escape the code for a table cell.
+    handlebars.registerHelper('cell', function(code) {
+      return code.replace(/\|/g, '\\|').replace(/\n/g, '<br/>');
     });
-    contents.forEach(function (content, index) {
-      if (content) {
-        console.log(content);
+
+    // Escape the code for a titles.
+    handlebars.registerHelper('title', function(code) {
+      return code.replace(/\n/g, '<br/>');
+    });
+
+    // Generate an anchor for internal links
+    handlebars.registerHelper('anchor', function(name) {
+      if (options.anchors) {
+        return '{#' + name + '}';
+      }
+      else {
+        return '';
       }
     });
-  });
-});
+
+    //
+    // Load the templates
+    //
+    var contents = [];
+    var templates = {};
+    var templatesDirectory = path.join(__dirname, 'templates', options.lang);
+    fs.readdirSync(templatesDirectory).forEach(function (filename) {
+      var fullname = path.join(templatesDirectory, filename);
+      var template = handlebars.compile(fs.readFileSync(fullname, 'utf8'), {
+        noEscape: true,
+        strict: true
+      });
+      templates[filename.match(/(.*)\.md$/)[1]] = template;
+    });
+
+    //
+    // parsing files
+    //
+    log.verbose('Parsing ' + path.join(options.directory, 'index.xml'));
+    fs.readFile(path.join(options.directory, 'index.xml'), 'utf8', function(err, data) {
+      var parser = new xml2js.Parser();
+      parser.parseString(data, function (err, result) {
+        var root = new Compound();
+        doxyparser.parseIndex(root, result.doxygenindex.compound, options);
+        var compounds = root.getAll('compounds', true);
+        var contents = compounds.map(function (compound) {
+          return compound.toMarkdown(templates);
+        });
+        contents.forEach(function (content) {
+          if (content) {
+            process.stdout.write(content);
+          }
+        });
+      });
+    });
+  }
+
+}

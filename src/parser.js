@@ -114,6 +114,8 @@ function toMarkdown(element, context) {
           case 'itemizedlist': s = '\n\n'; break;
           case 'listitem': s = '* '; break;
           case 'sp': s = ' '; break;
+          case 'heading': s = '## '; break;
+          case 'xrefsect': s += '\n> '; break;
           case 'simplesect':
             if (element.$.kind == 'attention') {
               s = '> ';
@@ -121,11 +123,15 @@ function toMarkdown(element, context) {
             else if (element.$.kind == 'return') {
               s = '\n#### Returns\n'
             }
+            else if (element.$.kind == 'see') {
+              s = '\n**See also**: '
+            }
             else {
               console.assert(element.$.kind + ' not supported.');
             }
             break;
-          
+
+          case 'xreftitle':
           case 'entry':
           case 'row':
           case 'ulink':
@@ -135,6 +141,7 @@ function toMarkdown(element, context) {
           case 'para':
           case 'parameterdescription':
           case 'parameternamelist':
+          case 'xrefdescription':
           case undefined:
             break;
             
@@ -163,6 +170,7 @@ function toMarkdown(element, context) {
           case 'itemizedlist': s += '\n'; break;
           case 'listitem': s += '\n'; break;
           case 'entry': s = ' | '; break;
+          case 'xreftitle': s += ': '; break;
           case 'row':
             s = '\n' + markdown.escape.row(s);
             if (element.$$ && element.$$[0].$.thead == "yes") {
@@ -319,7 +327,7 @@ module.exports = {
     return;
   },
   
-  parseIndex: function (directory, root, index, options) {
+  parseIndex: function (root, index, options) {
     
     index.forEach(function (element) {
       var doxygen, compound = root.find(element.name[0].split('::'), true);
@@ -329,11 +337,13 @@ module.exports = {
         charsAsChildren: true
       });
       this.parseMembers(compound, element.$, element.member);
-      log.verbose('Parsing ' + path.join(directory, compound.refid + '.xml'));
-      doxygen = fs.readFileSync(path.join(directory, compound.refid + '.xml'), 'utf8');
-      xmlParser.parseString(doxygen, function (err, data) {
-        this.parseCompound(compound, data.doxygen.compounddef[0]);
-      }.bind(this));
+      if (compound.kind !== 'page' && compound.kind !== 'file') {
+        log.verbose('Parsing ' + path.join(options.directory, compound.refid + '.xml'));
+        doxygen = fs.readFileSync(path.join(options.directory, compound.refid + '.xml'), 'utf8');
+        xmlParser.parseString(doxygen, function (err, data) {
+          this.parseCompound(compound, data.doxygen.compounddef[0]);
+        }.bind(this));
+      }
     }.bind(this));
     
     root.toArray('compounds').forEach(function (compound) {
