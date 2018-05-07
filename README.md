@@ -20,4 +20,4 @@ in the API section.
   -v, --verbose  verbose mode
   ```
 
-The all documentation converted to Markdown is generated on stdout.
+All documentation converted to Markdown is generated on stdout.
